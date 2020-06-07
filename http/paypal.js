@@ -40,7 +40,7 @@ async function prettyPrint(jsonData, pre=""){
 function parseSingleOriginalError(error) {
     let result = {
         error: '',
-        description: ''
+        description: 'An error occured. Please try again.'
     }
     if(error._originalError) {
         try {
@@ -48,6 +48,7 @@ function parseSingleOriginalError(error) {
         } catch (e) {
             originalErrBody = error._originalError.text
         }
+
         if ((typeof originalErrBody) === 'object' ) {
             if (originalErrBody.details && originalErrBody.details.length > 0 ) {
                 return result = {
