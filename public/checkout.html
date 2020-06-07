@@ -1,0 +1,140 @@
+<html>
+
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Ensures optimal rendering on mobile devices. -->
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" /> <!-- Optimal Internet Explorer compatibility -->
+  <style>
+    @import url('https://fonts.googleapis.com/css?family=Open+Sans');
+
+    body {
+      background: #EEE;
+    }
+
+    body,
+    input {
+      font-family: "Open Sans", sans-serif;
+      font-size: 1em;
+    }
+
+    h1 {
+      font-family: "Open Sans", sans-serif;
+    }
+
+    .item {
+      width: 60px;
+      vertical-align: middle;
+      margin-right: 15px;
+    }
+
+    .button:hover {
+      background: #33B5E5;
+    }
+
+    .checkout {
+      margin: 0 auto;
+      width: 350px;
+    }
+
+    .addr input {
+      width: 100%;
+      outline: none;
+      border: 0px solid;
+      padding: 5px;
+    }
+
+    #button {
+      padding: 4px;
+      color: black;
+      text-align: center;
+      margin-top: 20px;
+      margin-bottom: 20px;
+      border-radius: 5px 5px;
+    }
+  </style>
+</head>
+
+<head>
+
+</head>
+
+<body>
+  <div class="checkout">
+    <h1>Checkout</h1>
+    <p>You are about to buy:</p>
+    <p><img class="item" title="Image of Cover" src="https://i.imgur.com/knxv5oN.jpg" />The PayPal Wars for $65.00</p>
+    <p>Ship to:</p>
+    <div class="addr">
+      <p>5 Temasek Boulevard<br />
+        #09-01 Suntec Tower Five<br />
+        038985<br />
+        Singapore</p>
+    </div>
+    <div id="button"></div>
+    <div>
+      <div>Sandbox options</div>
+      <form id="sandbox">
+          <label for="vehicle1">
+            <input type="checkbox" id="INSTRUMENT_DECLINED" name="INSTRUMENT_DECLINED" value="INSTRUMENT_DECLINED">
+            <code>INSTRUMENT_DECLINED</code>
+          </label>
+      </form>
+    </div>
+
+  </div>
+
+  <script
+    src="https://www.paypal.com/sdk/js?client-id=AbtZSJXGO3XShWPEm0ErhEcH84a_vjFYg6ZKidEYMmdGXrntuakmYttEyLqoJPrjOPgDFF8MJax47VRT&currency=HKD"> // Required. Replace SB_CLIENT_ID with your sandbox client ID.
+    </script>
+  <script>
+    paypal.Buttons({
+      createOrder: function (data, actions) {
+        return fetch('/api/orders', {
+          method: 'POST',
+          headers: {
+            'content-type': 'application/json'
+          },
+          body: JSON.stringify({
+            value: 65.00
+          })
+        }).then(function (res) {
+          return res.json();
+        }).then(function (details) {
+          if (details.error) {
+             return alert(`error: ${details.error}\ndescription: ${details.description}`)
+          }
+          return details.orderID
+        });
+      },
+      onApprove: function (data, actions) {
+
+        const mockAppCodeCheckbox = document.getElementById("INSTRUMENT_DECLINED");
+        const headers = {
+          'content-type': 'application/json'
+        }   
+        if (mockAppCodeCheckbox.checked === true) {
+           headers['MOCK-APPLICATION-CODE'] = mockAppCodeCheckbox.value
+        }
+
+        return fetch('/api/capture-paypal-transaction', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({
+            orderID: data.orderID
+          })
+        }).then(function (res) {
+          return res.json();
+        }).then(function (details) {
+          if (details.error === 'INSTRUMENT_DECLINED') {
+            console.log('....restarting')
+            return actions.restart();
+          }
+          window.location = `/complete.html?orderid=${details.orderID}&status=${details.status}`
+        });
+      }
+    }).render('#button');
+  </script>
+
+</body>
+
+</html>
